@@ -1,0 +1,50 @@
+[
+  {
+    "id": "1",
+    "userName": "user",
+    "permissions": [
+      "View Movies",
+      "View Subscriptions"
+    ]
+  },
+  {
+    "id": "2",
+    "userName": "member",
+    "permissions": [
+      "View Movies",
+      "View Subscriptions",
+      "Edit Subscriptions"
+    ]
+  },
+  {
+    "id": "3",
+    "userName": "admin",
+    "password": "admin123",
+    "permissions": [
+      "View Movies",
+      "Add Movies",
+      "Delete Movies",
+      "Edit Movies",
+      "Manage Users",
+      "Manage Members",
+      "View Subscriptions",
+      "Edit Subscriptions"
+    ]
+  },
+  {
+    "id": "4",
+    "userName": "pazraz",
+    "permissions": [
+      "View Movies",
+      "View Subscriptions"
+    ]
+  },
+  {
+    "id": "5",
+    "userName": "afsafsadmin",
+    "permissions": [
+      "View Movies",
+      "View Subscriptions"
+    ]
+  }
+]

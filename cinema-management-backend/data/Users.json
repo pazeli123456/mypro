@@ -1,0 +1,49 @@
+[
+  {
+    "id": "1",
+    "userName": "admin",
+    "firstName": "Admin",
+    "lastName": "User",
+    "password": "admin123",
+    "createdDate": "2024-01-01",
+    "sessionTimeOut": 30,
+    "isAdmin": true
+  },
+  {
+    "id": "2",
+    "userName": "member",
+    "password": "password",
+    "permissions": [
+      "View Movies",
+      "View Subscriptions",
+      "Edit Subscriptions"
+    ],
+    "role": "MEMBER"
+  },
+  {
+    "id": "1",
+    "userName": "user",
+    "password": "password",
+    "permissions": [
+      "View Movies",
+      "View Subscriptions"
+    ],
+    "role": "USER"
+  },
+  {
+    "id": "4",
+    "userName": "pazraz",
+    "password": "Pazraz12@",
+    "email": "www@gm.com",
+    "createdDate": "2025-01-18T16:08:01.714Z",
+    "sessionTimeOut": 60
+  },
+  {
+    "id": "5",
+    "userName": "afsafsadmin",
+    "password": "12345678@",
+    "email": "safsa@sadgf.com",
+    "createdDate": "2025-01-18T21:07:47.996Z",
+    "sessionTimeOut": 60
+  }
+]
