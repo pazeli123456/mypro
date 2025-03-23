@@ -1,443 +1,273 @@
 // src/services/apiService.js
 import axios from 'axios';
 
+// יצירת מופע של axios עם הגדרות בסיסיות
 const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+    baseURL: 'http://localhost:3001/api',
     headers: {
-        'Content-Type': 'application/json',
-    },
-    timeout: 15000, // 15 seconds timeout
+        'Content-Type': 'application/json'
+    }
 });
 
+// פונקציות עזר
+const isNetworkError = (error) => {
+    return !error.response && error.request;
+};
+
+const handleError = (error) => {
+    if (isNetworkError(error)) {
+        throw new Error('שגיאת רשת - אנא בדוק את החיבור לאינטרנט');
+    }
+    throw error.response?.data?.message || 'שגיאה לא ידועה';
+};
+
+// מחלקת ניהול טוקנים
 class TokenManager {
     static getToken() {
         return localStorage.getItem('token');
     }
 
     static setToken(token) {
-        if (token) {
-            localStorage.setItem('token', token);
-            apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        }
+        localStorage.setItem('token', token);
     }
 
     static removeToken() {
         localStorage.removeItem('token');
-        delete apiClient.defaults.headers.common['Authorization'];
     }
 
-    static getAuthHeader() {
-        const token = this.getToken();
-        return token ? `Bearer ${token}` : '';
-    }
-
-    static isAuthenticated() {
-        return !!this.getToken();
-    }
-
-    static getCurrentUser() {
-        try {
-            return {
-                id: localStorage.getItem('userId'),
-                userName: localStorage.getItem('userName'),
-                firstName: localStorage.getItem('firstName'),
-                lastName: localStorage.getItem('lastName'),
-                permissions: JSON.parse(localStorage.getItem('permissions') || '[]'),
-                isAdmin: localStorage.getItem('isAdmin') === 'true',
-                sessionTimeOut: parseInt(localStorage.getItem('sessionTimeOut') || '60', 10),
-            };
-        } catch (error) {
-            console.error('Error getting current user:', error);
-            this.clearUserData();
-            return null;
-        }
-    }
-
-    static setUserData(userData) {
-        try {
-            localStorage.setItem('userId', userData.id || userData.userId);
-            localStorage.setItem('userName', userData.userName);
-            localStorage.setItem('firstName', userData.firstName || '');
-            localStorage.setItem('lastName', userData.lastName || '');
-            localStorage.setItem('permissions', JSON.stringify(userData.permissions || []));
-            localStorage.setItem('isAdmin', String(userData.permissions?.includes('Manage Users')));
-            localStorage.setItem('sessionTimeOut', String(userData.sessionTimeOut || 60));
-        } catch (error) {
-            console.error('Error setting user data:', error);
-            this.clearUserData();
-            throw new Error('Error saving user data');
-        }
+    static getUserData() {
+        return {
+            id: localStorage.getItem('userId'),
+            username: localStorage.getItem('userName'),
+            permissions: JSON.parse(localStorage.getItem('permissions') || '[]')
+        };
     }
 
     static clearUserData() {
-        const keys = [
-            'token',
-            'userId',
-            'userName',
-            'firstName',
-            'lastName',
-            'permissions',
-            'isAdmin',
-            'sessionTimeOut',
-        ];
-        keys.forEach((key) => localStorage.removeItem(key));
-        
-        // נקה גם את מידע ה-redux-persist
-        localStorage.removeItem('persist:root');
-        
-        delete apiClient.defaults.headers.common['Authorization'];
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('permissions');
     }
 }
 
-// Request Interceptor
+// מחלקת ניהול בקשות
+class RequestThrottler {
+    constructor() {
+        this.queue = [];
+        this.processing = false;
+        this.retryDelay = 1000;
+    }
+
+    async add(request) {
+        return new Promise((resolve, reject) => {
+            this.queue.push({ request, resolve, reject });
+            if (!this.processing) {
+                this.processQueue();
+            }
+        });
+    }
+
+    async processQueue() {
+        if (this.queue.length === 0) {
+            this.processing = false;
+            return;
+        }
+
+        this.processing = true;
+        const { request, resolve, reject } = this.queue.shift();
+
+        try {
+            const response = await request();
+            resolve(response);
+        } catch (error) {
+            if (error.response?.status === 429) {
+                // אם יש שגיאת Rate Limit, הכנס את הבקשה בחזרה לתור
+                this.queue.unshift({ request, resolve, reject });
+                setTimeout(() => this.processQueue(), this.retryDelay);
+            } else {
+                reject(error);
+            }
+        }
+    }
+}
+
+const requestThrottler = new RequestThrottler();
+
+// אינטרספטורים
 apiClient.interceptors.request.use(
     (config) => {
-        const token = TokenManager.getAuthHeader();
+        const token = TokenManager.getToken();
         if (token) {
-            config.headers['Authorization'] = token;
+            config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },
     (error) => {
-        console.error('Request error:', error);
         return Promise.reject(error);
     }
 );
 
-// Response Interceptor
 apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
-        if (error.response) {
-            const { config, response: { status } } = error;
-            if (status === 401) {
-                TokenManager.clearUserData();
-                window.location.href = '/login';
-                return Promise.reject(error);
-            }
-            if (status === 429) {
-                config.__retryCount = config.__retryCount || 0;
-                if (config.__retryCount < 3) {
-                    config.__retryCount += 1;
-                    const backoff = Math.pow(2, config.__retryCount) * 1000;
-                    console.warn(`Rate limit exceeded. Retrying in ${backoff/1000} seconds...`);
-                    await new Promise(resolve => setTimeout(resolve, backoff));
-                    return apiClient(config);
-                }
-            }
+        if (error.response?.status === 401) {
+            TokenManager.clearUserData();
+            window.location.href = '/login';
+        }
+        if (error.response?.status === 429) {
+            return { data: {} }; // החזר תשובה ריקה במקום לדחות
         }
         return Promise.reject(error);
     }
 );
 
-// נוסיף מנגנון throttling למניעת בקשות רבות מדי במקביל
-class RequestThrottler {
-    constructor() {
-        this.queue = {};
-        this.inProgress = {};
-    }
-
-    async throttle(key, requestFn) {
-        // אם כבר יש בקשה בתור לאותו מפתח, נחזיר את ההבטחה שלה
-        if (this.queue[key]) {
-            return this.queue[key];
-        }
-
-        // אם יש בקשה שכבר מתבצעת, נחכה לה
-        if (this.inProgress[key]) {
-            return new Promise((resolve) => {
-                const checkComplete = setInterval(() => {
-                    if (!this.inProgress[key]) {
-                        clearInterval(checkComplete);
-                        resolve(this.throttle(key, requestFn));
-                    }
-                }, 500);
-            });
-        }
-
-        // סמן שהבקשה בביצוע
-        this.inProgress[key] = true;
-
-        // בצע את הבקשה
-        try {
-            const promise = requestFn();
-            this.queue[key] = promise;
-
-            const result = await promise;
-            
-            // כשהבקשה מסתיימת, נקה את התור והסימון
-            delete this.queue[key];
-            delete this.inProgress[key];
-            
-            return result;
-        } catch (error) {
-            // במקרה של שגיאה, נקה גם
-            delete this.queue[key];
-            delete this.inProgress[key];
-            throw error;
-        }
-    }
-}
-
-const throttler = new RequestThrottler();
-
+// שירות אימות
 export const authService = {
-    async login(userName, password) {
-        try {
-            const response = await apiClient.post('/auth/login', {
-                userName,
-                password,
-            });
-
-            if (!response.data || !response.data.token) {
-                throw new Error('Invalid server response');
-            }
-
-            const userData = {
-                id: response.data.userId,
-                userName: response.data.userName,
-                permissions: response.data.permissions || [],
-                token: response.data.token,
-                sessionTimeOut: response.data.sessionTimeOut || 60,
-            };
-
-            TokenManager.setToken(userData.token);
-            TokenManager.setUserData(userData);
-
-            return userData;
-        } catch (error) {
-            TokenManager.clearUserData();
-            throw new Error(error.response?.data?.error || 'Invalid username or password');
-        }
-    },
-
-    async logout() {
-        try {
-            // נסה לשלוח בקשה לשרת כדי להתנתק, אבל אל תיכשל אם אין כזו נקודת קצה
-            try {
-                await apiClient.post('/auth/logout');
-            } catch (error) {
-                // אם לא קיימת נקודת קצה logout, פשוט התעלם - לא נכשל
-                console.log('No server-side logout endpoint, continuing with client-side logout');
-            }
-        } catch (error) {
-            console.error('Logout error:', error);
-        } finally {
-            // בכל מקרה, נקה את המידע המקומי
-            TokenManager.clearUserData();
-        }
-    },
-
-    async checkAuthStatus() {
-        try {
-            const token = TokenManager.getToken();
-            if (!token) {
-                throw new Error('Token not found');
-            }
-
-            const response = await apiClient.get('/auth/verify-token');
-
-            if (response.data) {
-                TokenManager.setUserData(response.data);
-            }
-
-            return response.data;
-        } catch (error) {
-            TokenManager.clearUserData();
-            throw error;
-        }
-    },
-
-    async createAccount(userData) {
-        const response = await apiClient.post('/auth/create-account', userData);
+    login: async (credentials) => {
+        const response = await apiClient.post('/auth/login', credentials);
         return response.data;
     },
-};
 
-const delayedRequest = async (requestFn, delay = 1000) => {
-    await new Promise(resolve => setTimeout(resolve, delay));
-    return requestFn();
-};
-
-export const userService = {
-    async getAll() {
-        return throttler.throttle('users', async () => {
-            const response = await delayedRequest(() => apiClient.get('/users'));
-            return response.data;
-        });
+    logout: async () => {
+        const response = await apiClient.post('/auth/logout');
+        TokenManager.clearUserData();
+        return response.data;
     },
 
-    async getById(id) {
-        if (!id) throw new Error('נדרש מזהה משתמש');
+    checkAuthStatus: async () => {
+        const response = await apiClient.get('/auth/status');
+        return response.data;
+    },
+
+    createAccount: async (userData) => {
+        const response = await apiClient.post('/auth/register', userData);
+        return response.data;
+    }
+};
+
+// שירות משתמשים
+export const userService = {
+    getAllUsers: async () => {
+        const response = await apiClient.get('/users');
+        return response.data;
+    },
+
+    getUserById: async (id) => {
         const response = await apiClient.get(`/users/${id}`);
         return response.data;
     },
 
-    async create(userData) {
-        if (!userData.userName || !userData.password) {
-            throw new Error('שם משתמש וסיסמה הם שדות חובה');
-        }
+    createUser: async (userData) => {
         const response = await apiClient.post('/users', userData);
         return response.data;
     },
 
-    async update(id, userData) {
-        if (!id) throw new Error('נדרש מזהה משתמש');
+    updateUser: async (id, userData) => {
         const response = await apiClient.put(`/users/${id}`, userData);
         return response.data;
     },
 
-    async delete(id) {
-        if (!id) throw new Error('נדרש מזהה משתמש');
-        await apiClient.delete(`/users/${id}`);
-        return true;
-    },
-
-    async updatePermissions(id, permissions) {
-        if (!id) throw new Error('נדרש מזהה משתמש');
-        const response = await apiClient.put(`/users/${id}/permissions`, { permissions });
+    deleteUser: async (id) => {
+        const response = await apiClient.delete(`/users/${id}`);
         return response.data;
     }
 };
 
+// שירות סרטים
 export const movieService = {
-    async getAll() {
-        return throttler.throttle('movies', async () => {
-            const response = await delayedRequest(() => apiClient.get('/movies'));
-            return response.data;
-        });
+    getAllMovies: async () => {
+        const response = await apiClient.get('/movies');
+        return response.data;
     },
 
-    async getMovieById(id) {
-        if (!id) throw new Error('נדרש מזהה סרט');
-        try {
-            const response = await apiClient.get(`/movies/${id}`);
-            return response.data;
-        } catch (error) {
-            console.error('Failed to fetch movie:', error);
-            throw new Error(error.response?.data?.message || 'שגיאה בטעינת הסרט');
-        }
+    getMovieById: async (id) => {
+        const response = await apiClient.get(`/movies/${id}`);
+        return response.data;
     },
 
-    async create(movieData) {
-        if (!movieData.name) throw new Error('שם הסרט הוא שדה חובה');
+    createMovie: async (movieData) => {
         const response = await apiClient.post('/movies', movieData);
         return response.data;
     },
 
-    async update(id, movieData) {
-        if (!id) throw new Error('נדרש מזהה סרט');
-        if (!movieData.name) throw new Error('שם הסרט הוא שדה חובה');
+    updateMovie: async (id, movieData) => {
         const response = await apiClient.put(`/movies/${id}`, movieData);
         return response.data;
     },
 
-    async delete(id) {
-        if (!id) throw new Error('נדרש מזהה סרט');
-        await apiClient.delete(`/movies/${id}`);
-        return true;
-    },
-
-    async search(query) {
-        if (!query) return [];
-        const response = await apiClient.get(`/movies/search?q=${encodeURIComponent(query)}`);
-        return response.data;
-    },
-
-    async fetchAndSaveMovies() {
-        const response = await apiClient.post('/movies/fetch-and-save');
+    deleteMovie: async (id) => {
+        const response = await apiClient.delete(`/movies/${id}`);
         return response.data;
     }
 };
 
+// שירות חברים
 export const memberService = {
-    async getAll() {
-        return throttler.throttle('members', async () => {
-            const response = await delayedRequest(() => apiClient.get('/members'));
-            return response.data;
-        });
+    getAllMembers: async () => {
+        const response = await apiClient.get('/members');
+        return response.data;
     },
 
-    async getById(id) {
-        if (!id) throw new Error('נדרש מזהה מנוי');
+    getMemberById: async (id) => {
         const response = await apiClient.get(`/members/${id}`);
         return response.data;
     },
 
-    async create(memberData) {
-        if (!memberData.name || !memberData.email) {
-            throw new Error('שם ואימייל הם שדות חובה');
-        }
+    createMember: async (memberData) => {
         const response = await apiClient.post('/members', memberData);
         return response.data;
     },
 
-    async update(id, memberData) {
-        if (!id) throw new Error('נדרש מזהה מנוי');
+    updateMember: async (id, memberData) => {
         const response = await apiClient.put(`/members/${id}`, memberData);
         return response.data;
     },
 
-    async delete(id) {
-        if (!id) throw new Error('נדרש מזהה מנוי');
-        await apiClient.delete(`/members/${id}`);
-        return true;
+    deleteMember: async (id) => {
+        const response = await apiClient.delete(`/members/${id}`);
+        return response.data;
     }
 };
 
+// שירות מנויים
 export const subscriptionService = {
-    async getAll() {
-        return throttler.throttle('subscriptions', async () => {
-            const response = await delayedRequest(() => apiClient.get('/subscriptions'));
-            return response.data;
-        });
+    getAllSubscriptions: async () => {
+        const response = await apiClient.get('/subscriptions');
+        return response.data;
     },
 
-    async getById(id) {
-        if (!id) throw new Error('נדרש מזהה מנוי');
+    getSubscriptionById: async (id) => {
         const response = await apiClient.get(`/subscriptions/${id}`);
         return response.data;
     },
 
-    async getMemberSubscriptions(memberId) {
-        if (!memberId) throw new Error('נדרש מזהה מנוי');
-        const response = await apiClient.get(`/subscriptions/member/${memberId}`);
-        return response.data;
-    },
-
-    async create(subscriptionData) {
-        if (!subscriptionData.memberId || !subscriptionData.movieId) {
-            throw new Error('מזהה מנוי ומזהה סרט הם שדות חובה');
-        }
+    createSubscription: async (subscriptionData) => {
         const response = await apiClient.post('/subscriptions', subscriptionData);
         return response.data;
     },
 
-    async update(id, subscriptionData) {
-        if (!id) throw new Error('נדרש מזהה מנוי');
+    updateSubscription: async (id, subscriptionData) => {
         const response = await apiClient.put(`/subscriptions/${id}`, subscriptionData);
         return response.data;
     },
 
-    async delete(id) {
-        if (!id) throw new Error('נדרש מזהה מנוי');
-        await apiClient.delete(`/subscriptions/${id}`);
-        return true;
-    },
-
-    async addMovieToMember(memberId, movieData) {
-        if (!memberId || !movieData || !movieData.movieId || !movieData.date) {
-            throw new Error('חסרים נתונים נדרשים');
-        }
-        const response = await apiClient.post(`/subscriptions/member/${memberId}/movies`, movieData);
+    deleteSubscription: async (id) => {
+        const response = await apiClient.delete(`/subscriptions/${id}`);
         return response.data;
     },
-    
-    async getWatchedMovies(memberId) {
-        if (!memberId) throw new Error('נדרש מזהה מנוי');
-        const response = await apiClient.get(`/subscriptions/member/${memberId}/movies`);
+
+    addMovieToMember: async (memberId, movieData) => {
+        const response = await apiClient.post(`/subscriptions/member/${memberId}/movie`, movieData);
+        return response.data;
+    },
+
+    getMemberSubscriptions: async (memberId) => {
+        const response = await apiClient.get(`/subscriptions/member/${memberId}`);
+        return response.data;
+    },
+
+    getMovieSubscriptions: async (movieId) => {
+        const response = await apiClient.get(`/subscriptions/movie/${movieId}`);
         return response.data;
     }
 };
-
-export { apiClient, TokenManager };

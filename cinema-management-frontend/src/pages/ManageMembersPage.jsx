@@ -63,8 +63,11 @@ const ManageMembersPage = () => {
 
     // פונקציות עזר
     const calculateMembershipStatus = (member) => {
-        if (!member.subscriptionEndDate) return 'active';
-        return new Date(member.subscriptionEndDate) > new Date() ? 'active' : 'expired';
+        if (!member.subscriptions?.length) return 'expired';
+        const lastSubscription = member.subscriptions.reduce((latest, sub) => {
+            return latest < new Date(sub.date) ? new Date(sub.date) : latest;
+        }, new Date(0));
+        return new Date(lastSubscription) > new Date() ? 'active' : 'expired';
     };
 
     const getLastActivityDate = (member) => {

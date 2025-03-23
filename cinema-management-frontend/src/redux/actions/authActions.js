@@ -1,6 +1,6 @@
 // src/redux/actions/authActions.js
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { authService, TokenManager } from '../../services/apiService';
+import { authService } from '../../services/apiService';
 
 // פונקציית עזר - הוספת הרשאות בסיסיות אם חסרות
 const ensureBasicPermissions = (permissions = []) => {
@@ -30,115 +30,73 @@ const ensureBasicPermissions = (permissions = []) => {
     return updatedPermissions;
 };
 
+// התחברות
 export const login = createAsyncThunk(
     'auth/login',
     async (credentials, { rejectWithValue }) => {
         try {
-            const response = await authService.login(credentials.userName, credentials.password);
-            
-            if (!response || !response.token) {
-                throw new Error('תגובה לא תקינה מהשרת');
-            }
-
-            // וודא שיש הרשאות בסיסיות
-            const enhancedPermissions = ensureBasicPermissions(response.permissions || []);
-
-            const userData = {
-                userId: response.id || response.userId,
-                userName: response.userName,
-                firstName: response.firstName || '',
-                lastName: response.lastName || '',
-                permissions: enhancedPermissions,
-                token: response.token,
-                sessionTimeOut: response.sessionTimeOut || 60,
-                isAdmin: enhancedPermissions.includes('Manage Users') || false
-            };
-
-            TokenManager.setToken(userData.token);
-            TokenManager.setUserData({...userData, permissions: enhancedPermissions});
-
-            return userData;
-
+            const response = await authService.login(credentials);
+            localStorage.setItem('token', response.token);
+            localStorage.setItem('userId', response.user._id);
+            localStorage.setItem('userName', response.user.username);
+            localStorage.setItem('permissions', JSON.stringify(response.user.permissions));
+            return response.user;
         } catch (error) {
-            console.error('Login error:', error);
-            TokenManager.clearUserData();
-            return rejectWithValue(error.message || 'שם משתמש או סיסמה שגויים');
+            return rejectWithValue(error.response?.data?.message || 'שגיאה בהתחברות');
         }
     }
 );
 
+// התנתקות
 export const logout = createAsyncThunk(
     'auth/logout',
-    async (_, { dispatch, rejectWithValue }) => {
-        try {
-            await authService.logout();
-            TokenManager.clearUserData();
-            
-            // אפס את המצב הכללי של האפליקציה
-            dispatch({ type: 'RESET_APP_STATE' });
-            
-            return true;
-        } catch (error) {
-            console.error('Logout error:', error);
-            // גם במקרה של שגיאה, עדיין נקה את המידע המקומי
-            TokenManager.clearUserData();
-            dispatch({ type: 'RESET_APP_STATE' });
-            return rejectWithValue(error.message || 'שגיאה בהתנתקות');
-        }
+    async () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('permissions');
     }
 );
 
+// בדיקת סטטוס אימות
 export const checkAuthStatus = createAsyncThunk(
-    'auth/checkStatus',
+    'auth/checkAuthStatus',
     async (_, { rejectWithValue }) => {
         try {
-            const token = TokenManager.getToken();
+            const token = localStorage.getItem('token');
             if (!token) {
-                return rejectWithValue('לא נמצא טוקן');
+                throw new Error('אין טוקן שמור');
             }
 
             const response = await authService.checkAuthStatus();
-            
-            if (!response) {
-                return rejectWithValue('תגובה לא תקינה מהשרת');
-            }
-
-            // וודא שיש הרשאות בסיסיות
-            const enhancedPermissions = ensureBasicPermissions(response.permissions || []);
-
-            return {
-                userId: response.id || response.userId,
-                userName: response.userName,
-                firstName: response.firstName || '',
-                lastName: response.lastName || '',
-                permissions: enhancedPermissions,
-                token: response.token || token,
-                sessionTimeOut: response.sessionTimeOut || 60,
-                isAdmin: enhancedPermissions.includes('Manage Users') || false
-            };
-
+            localStorage.setItem('token', response.token);
+            localStorage.setItem('userId', response.user._id);
+            localStorage.setItem('userName', response.user.username);
+            localStorage.setItem('permissions', JSON.stringify(response.user.permissions));
+            return response.user;
         } catch (error) {
-            console.error('Auth check error:', error);
-            TokenManager.clearUserData();
-            return rejectWithValue(error.message || 'בדיקת אימות נכשלה');
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('permissions');
+            return rejectWithValue(error.response?.data?.message || 'שגיאה בבדיקת סטטוס אימות');
         }
     }
 );
 
+// יצירת חשבון
 export const createAccount = createAsyncThunk(
     'auth/createAccount',
     async (userData, { rejectWithValue }) => {
         try {
             const response = await authService.createAccount(userData);
-            
-            if (!response) {
-                throw new Error('תגובה לא תקינה מהשרת');
-            }
-
-            return response;
+            localStorage.setItem('token', response.token);
+            localStorage.setItem('userId', response.user._id);
+            localStorage.setItem('userName', response.user.username);
+            localStorage.setItem('permissions', JSON.stringify(response.user.permissions));
+            return response.user;
         } catch (error) {
-            console.error('Create account error:', error);
-            return rejectWithValue(error.message || 'שגיאה ביצירת החשבון');
+            return rejectWithValue(error.response?.data?.message || 'שגיאה ביצירת חשבון');
         }
     }
 );

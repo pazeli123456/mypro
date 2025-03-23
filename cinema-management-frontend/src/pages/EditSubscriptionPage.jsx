@@ -7,7 +7,7 @@ import {
     selectAllMovies, 
     selectMovieLoading 
 } from '../redux/reducers/movieReducer';
-import { subscriptionService } from '../services/apiService';
+import { subscriptionService, memberService } from '../services/apiService';
 import {
     selectSubscriptionError,
     selectSubscriptionLoading
@@ -33,7 +33,7 @@ const EditSubscriptionPage = () => {
     });
 
     useEffect(() => {
-        if (!user?.permissions?.includes('Update Subscriptions')) {
+        if (!user?.permissions?.includes('Edit Subscriptions')) {
             navigate('/subscriptions');
             return;
         }
@@ -44,10 +44,19 @@ const EditSubscriptionPage = () => {
                 await dispatch(fetchAllMovies());
                 const data = await subscriptionService.getById(id);
                 if (!data) throw new Error('המנוי לא נמצא');
-                setSubscription(data);
+                if (!data.memberId) throw new Error('לא נמצא חבר למנוי זה');
+                
+                // טען פרטי החבר
+                const memberData = await memberService.getById(data.memberId);
+                if (!memberData) throw new Error('לא נמצאו פרטי החבר');
+                
+                setSubscription({
+                    ...data,
+                    memberId: memberData
+                });
                 setError('');
             } catch (err) {
-                setError('שגיאה בטעינת פרטי המנוי');
+                setError(err.message || 'שגיאה בטעינת פרטי המנוי');
                 console.error(err);
             } finally {
                 setLoading(false);
@@ -149,7 +158,7 @@ const EditSubscriptionPage = () => {
         <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8">
                 <h1 className="text-2xl font-bold mb-8">
-                    עריכת מנוי: {subscription.memberId?.name}
+                    עריכת מנוי: {subscription.memberId?.name || 'חבר לא ידוע'}
                 </h1>
 
                 {error && (

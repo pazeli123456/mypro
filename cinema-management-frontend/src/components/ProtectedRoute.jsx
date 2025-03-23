@@ -1,36 +1,29 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { selectIsAuthenticated, selectUser, selectPermissions } from '../redux/reducers/authSlice';
+import { Navigate, useLocation } from 'react-router-dom';
+import { selectCurrentUser } from '../redux/reducers/authReducer';
 
-const ProtectedRoute = ({ 
-    children, 
-    requiredPermissions = [], 
-    requiredRole = null 
-}) => {
-    const isAuthenticated = useSelector(selectIsAuthenticated);
-    const user = useSelector(selectUser);
-    const permissions = useSelector(selectPermissions);
-    
-    const hasRequiredRole = requiredRole ? user?.role === requiredRole : true;
-    
-    const hasRequiredPermissions = 
-        requiredPermissions.length === 0 || 
-        requiredPermissions.some(permission => permissions?.includes(permission)) ||
-        (permissions && permissions.includes('Admin'));
+const ProtectedRoute = ({ children, requiredPermissions = [] }) => {
+    const location = useLocation();
+    const user = useSelector(selectCurrentUser);
+    const permissions = user?.permissions || [];
 
-    if (!isAuthenticated) {
+    // אם המשתמש לא מחובר, הפנה אותו לדף ההתחברות
+    if (!user) {
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+
+    // בדוק אם למשתמש יש את כל ההרשאות הנדרשות
+    const hasRequiredPermissions = requiredPermissions.every(permission =>
+        permissions.includes(permission)
+    );
+
+    // אם אין למשתמש את ההרשאות הנדרשות, הפנה אותו לדף הראשי
+    if (!hasRequiredPermissions) {
         return <Navigate to="/" replace />;
     }
 
-    if (requiredRole && !hasRequiredRole) {
-        return <Navigate to="/unauthorized" replace />;
-    }
-
-    if (requiredPermissions.length > 0 && !hasRequiredPermissions) {
-        return <Navigate to="/unauthorized" replace />;
-    }
-
+    // אם יש למשתמש את כל ההרשאות הנדרשות, הצג את התוכן
     return children;
 };
 

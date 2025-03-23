@@ -29,6 +29,17 @@ const MoviesPage = () => {
     // Local State
     const [error, setError] = useState('');
 
+    // פונקציה שבודקת אם URL התמונה חוקי
+    const getValidImageUrl = (imageUrl) => {
+        if (!imageUrl || 
+            typeof imageUrl !== 'string' || 
+            imageUrl.includes('ERR_') || 
+            imageUrl.includes('&/#x2F;')) {
+            return 'https://via.placeholder.com/300x450?text=No+Image';
+        }
+        return imageUrl;
+    };
+
     // Initial Load
     useEffect(() => {
         const loadMovies = async () => {
@@ -164,9 +175,13 @@ const MoviesPage = () => {
                             <div key={movie._id} className="bg-white rounded-lg shadow-lg overflow-hidden">
                                 {movie.image && (
                                     <img
-                                        src={movie.image}
+                                        src={getValidImageUrl(movie.image)}
                                         alt={movie.name}
                                         className="w-full h-64 object-cover"
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = 'https://via.placeholder.com/300x450?text=No+Image';
+                                        }}
                                     />
                                 )}
                                 <div className="p-6">

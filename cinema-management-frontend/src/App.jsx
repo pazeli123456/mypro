@@ -1,216 +1,214 @@
 // src/App.jsx
-import React, { useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { selectCurrentUser } from './redux/reducers/authReducer';
 import { checkAuthStatus } from './redux/actions/authActions';
-import { selectIsAuthenticated, selectPermissions } from './redux/reducers/authReducer';
+import ProtectedRoute from './components/ProtectedRoute';
+import Navbar from './components/Navbar';
 
-// Components
+// דפים
 import Login from './pages/Login';
-import CreateAccount from './pages/CreateAccount';
 import MainPage from './pages/MainPage';
 import MoviesPage from './pages/MoviesPage';
-import EditMoviePage from './pages/EditMoviePage';
+import MovieDetailsPage from './pages/MovieDetailsPage';
 import AddMoviePage from './pages/AddMoviePage';
-import AllSubscriptionsPage from './pages/AllSubscriptionsPage';
+import EditMoviePage from './pages/EditMoviePage';
+import DeleteMoviePage from './pages/DeleteMoviePage';
+import MembersPage from './pages/MembersPage';
+import EditMemberPage from './pages/EditMemberPage';
+import AddMemberPage from './pages/AddMemberPage';
+import SubscriptionsPage from './pages/SubscriptionsPage';
 import AddSubscriptionPage from './pages/AddSubscriptionPage';
 import EditSubscriptionPage from './pages/EditSubscriptionPage';
 import ManageUsersPage from './pages/ManageUsersPage';
-import AddUserPage from './pages/AddUserPage';
 import EditUserPage from './pages/EditUserPage';
-import AddMemberPage from './pages/AddMemberPage';
-import EditMemberPage from './pages/EditMemberPage';
-import AllMovies from './pages/AllMovies';
-import AllMembersPage from './pages/AllMembersPage';
-import WatchedMoviesPage from './pages/WatchedMoviesPage';
-
-// Protected Route Component
-const ProtectedRoute = ({ children, requiredPermissions = [] }) => {
-    const isAuthenticated = useSelector(selectIsAuthenticated);
-    const permissions = useSelector(selectPermissions);
-    const location = useLocation();
-
-    if (!isAuthenticated) {
-        return <Navigate to="/" state={{ from: location }} replace />;
-    }
-
-    if (requiredPermissions.length > 0 && 
-        !requiredPermissions.every(permission => permissions.includes(permission))) {
-        return <Navigate to="/main" replace />;
-    }
-
-    return children;
-};
+import AddUserPage from './pages/AddUserPage';
+import CreateAccount from './pages/CreateAccount';
 
 const App = () => {
     const dispatch = useDispatch();
-    const navigate = useNavigate();
-    const isAuthenticated = useSelector(selectIsAuthenticated);
+    const user = useSelector(selectCurrentUser);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        const initAuth = async () => {
+        const initializeApp = async () => {
             try {
                 await dispatch(checkAuthStatus()).unwrap();
+                setLoading(false);
             } catch (err) {
-                console.error('Auth check failed:', err);
-                navigate('/');
+                setError('שגיאה בטעינת האפליקציה');
+                console.error('Failed to initialize app:', err);
+                setLoading(false);
             }
         };
 
-        if (!isAuthenticated) {
-            initAuth();
-        }
-    }, [dispatch, navigate, isAuthenticated]);
+        initializeApp();
+    }, [dispatch]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-xl">טוען...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-xl text-red-500">{error}</div>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <Routes>
-                {/* Public routes */}
-                <Route path="/" element={<Login />} />
-                <Route path="/create-account" element={<CreateAccount />} />
+        <BrowserRouter>
+            <div className="min-h-screen bg-gray-100">
+                <Navbar />
+                <div className="container mx-auto px-4 py-8">
+                    <Routes>
+                        {/* ניהול משתמשים */}
+                        <Route
+                            path="/users"
+                            element={
+                                <ProtectedRoute requiredPermissions={['Manage Users']}>
+                                    <ManageUsersPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/users/edit/:id"
+                            element={
+                                <ProtectedRoute requiredPermissions={['Manage Users']}>
+                                    <EditUserPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/users/add"
+                            element={
+                                <ProtectedRoute requiredPermissions={['Manage Users']}>
+                                    <AddUserPage />
+                                </ProtectedRoute>
+                            }
+                        />
 
-                {/* Protected routes */}
-                <Route
-                    path="/main"
-                    element={
-                        <ProtectedRoute>
-                            <MainPage />
-                        </ProtectedRoute>
-                    }
-                />
+                        {/* נתיבים ציבוריים */}
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<CreateAccount />} />
 
-                {/* Movies routes */}
-                <Route path="/movies">
-                    <Route 
-                        index 
-                        element={
-                            <ProtectedRoute requiredPermissions={['View Movies']}>
-                                <MoviesPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route 
-                        path="add" 
-                        element={
-                            <ProtectedRoute requiredPermissions={['Create Movies']}>
-                                <AddMoviePage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route 
-                        path="edit/:id" 
-                        element={
-                            <ProtectedRoute requiredPermissions={['Update Movies']}>
-                                <EditMoviePage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route 
-                        path="all" 
-                        element={
-                            <ProtectedRoute requiredPermissions={['View Movies']}>
-                                <AllMovies />
-                            </ProtectedRoute>
-                        }
-                    />
-                </Route>
+                        {/* נתיבים מוגנים */}
+                        <Route
+                            path="/"
+                            element={
+                                <ProtectedRoute>
+                                    <MainPage />
+                                </ProtectedRoute>
+                            }
+                        />
 
-                {/* Subscriptions routes */}
-                <Route path="/subscriptions">
-                    <Route 
-                        index 
-                        element={
-                            <ProtectedRoute requiredPermissions={['View Subscriptions']}>
-                                <AllSubscriptionsPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route 
-                        path="add" 
-                        element={
-                            <ProtectedRoute requiredPermissions={['Create Subscriptions']}>
-                                <AddSubscriptionPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route 
-                        path="edit/:id" 
-                        element={
-                            <ProtectedRoute requiredPermissions={['Update Subscriptions']}>
-                                <EditSubscriptionPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                </Route>
+                        {/* ניהול סרטים */}
+                        <Route
+                            path="/movies"
+                            element={
+                                <ProtectedRoute requiredPermissions={['View Movies']}>
+                                    <MoviesPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/movies/:id"
+                            element={
+                                <ProtectedRoute requiredPermissions={['View Movies']}>
+                                    <MovieDetailsPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/movies/add"
+                            element={
+                                <ProtectedRoute requiredPermissions={['Create Movies']}>
+                                    <AddMoviePage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/movies/edit/:id"
+                            element={
+                                <ProtectedRoute requiredPermissions={['Update Movies']}>
+                                    <EditMoviePage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/movies/delete/:id"
+                            element={
+                                <ProtectedRoute requiredPermissions={['Delete Movies']}>
+                                    <DeleteMoviePage />
+                                </ProtectedRoute>
+                            }
+                        />
 
-                {/* Users Management routes */}
-                <Route path="/users">
-                    <Route 
-                        index 
-                        element={
-                            <ProtectedRoute requiredPermissions={['Manage Users']}>
-                                <ManageUsersPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route 
-                        path="add" 
-                        element={
-                            <ProtectedRoute requiredPermissions={['Manage Users']}>
-                                <AddUserPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route 
-                        path="edit/:id" 
-                        element={
-                            <ProtectedRoute requiredPermissions={['Manage Users']}>
-                                <EditUserPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                </Route>
+                        {/* ניהול חברים */}
+                        <Route
+                            path="/members"
+                            element={
+                                <ProtectedRoute requiredPermissions={['View Members']}>
+                                    <MembersPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/members/add"
+                            element={
+                                <ProtectedRoute requiredPermissions={['Create Members']}>
+                                    <AddMemberPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/members/edit/:id"
+                            element={
+                                <ProtectedRoute requiredPermissions={['Update Members']}>
+                                    <EditMemberPage />
+                                </ProtectedRoute>
+                            }
+                        />
 
-                {/* Members routes */}
-                <Route path="/members">
-                    <Route 
-                        index 
-                        element={
-                            <ProtectedRoute requiredPermissions={['View Members']}>
-                                <AllMembersPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route 
-                        path="add" 
-                        element={
-                            <ProtectedRoute requiredPermissions={['Create Members']}>
-                                <AddMemberPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route 
-                        path="edit/:id" 
-                        element={
-                            <ProtectedRoute requiredPermissions={['Update Members']}>
-                                <EditMemberPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route 
-                        path=":id/watched" 
-                        element={
-                            <ProtectedRoute requiredPermissions={['View Members']}>
-                                <WatchedMoviesPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                </Route>
+                        {/* ניהול מנויים */}
+                        <Route
+                            path="/subscriptions"
+                            element={
+                                <ProtectedRoute requiredPermissions={['View Subscriptions']}>
+                                    <SubscriptionsPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/subscriptions/add"
+                            element={
+                                <ProtectedRoute requiredPermissions={['Create Subscriptions']}>
+                                    <AddSubscriptionPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/subscriptions/edit/:id"
+                            element={
+                                <ProtectedRoute requiredPermissions={['Edit Subscriptions']}>
+                                    <EditSubscriptionPage />
+                                </ProtectedRoute>
+                            }
+                        />
 
-                {/* Fallback route */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-        </div>
+                        {/* נתיב ברירת מחדל */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                </div>
+            </div>
+        </BrowserRouter>
     );
 };
 

@@ -7,7 +7,7 @@ import { createMovie } from '../redux/actions/mainActions';
 const AddMoviePage = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const user = useSelector(state => state.user.user);
+    const user = useSelector(state => state.auth.user);
     
     const [movie, setMovie] = useState({
         name: '',

@@ -14,7 +14,7 @@ const MainPage = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const user = useSelector(selectCurrentUser);
-    const permissions = useSelector(selectPermissions);
+    const permissions = user?.permissions || [];
     const movies = useSelector(selectAllMovies);
     const loading = useSelector(selectMovieLoading);
     const [error, setError] = useState('');
@@ -60,32 +60,72 @@ const MainPage = () => {
         {
             title: 'סרטים',
             items: [
-                { label: 'צפה בסרטים', permission: 'View Movies', path: '/movies' },
-                { label: 'הוסף סרט', permission: 'Create Movies', path: '/movies/add' }
-            ]
-        },
-        {
-            title: 'מנויים',
-            items: [
-                { label: 'צפה במנויים', permission: 'View Subscriptions', path: '/subscriptions' },
-                { label: 'הוסף מנוי', permission: 'Create Subscriptions', path: '/subscriptions/add' }
+                { title: 'צפה בסרטים', path: '/movies', permission: 'View Movies' },
+                { title: 'הוסף סרט', path: '/movies/add', permission: 'Create Movies' },
+                { title: 'ערוך סרטים', path: '/movies', permission: 'Update Movies' },
+                { title: 'מחק סרטים', path: '/movies', permission: 'Delete Movies' }
             ]
         },
         {
             title: 'חברים',
             items: [
-                { label: 'צפה בחברים', permission: 'View Members', path: '/members' },
-                { label: 'הוסף חבר', permission: 'Create Members', path: '/members/add' }
+                { title: 'צפה בחברים', path: '/members', permission: 'View Members' },
+                { title: 'הוסף חבר', path: '/members/add', permission: 'Create Members' },
+                { title: 'ערוך חברים', path: '/members', permission: 'Update Members' },
+                { title: 'מחק חברים', path: '/members', permission: 'Delete Members' }
             ]
         },
         {
-            title: 'ניהול משתמשים',
+            title: 'מנויים',
             items: [
-                { label: 'ניהול משתמשים', permission: 'Manage Users', path: '/users' }
-            ],
-            adminOnly: true
+                { title: 'צפה במנויים', path: '/subscriptions', permission: 'View Subscriptions' },
+                { title: 'הוסף מנוי', path: '/subscriptions/add', permission: 'Create Subscriptions' },
+                { title: 'ערוך מנויים', path: '/subscriptions', permission: 'Edit Subscriptions' },
+                { title: 'מחק מנויים', path: '/subscriptions', permission: 'Delete Subscriptions' }
+            ]
+        },
+        {
+            title: 'משתמשים',
+            items: [
+                { title: 'צפה במשתמשים', path: '/users', permission: 'Manage Users' },
+                { title: 'הוסף משתמש', path: '/users/add', permission: 'Manage Users' },
+                { title: 'ערוך משתמשים', path: '/users', permission: 'Manage Users' },
+                { title: 'מחק משתמשים', path: '/users', permission: 'Manage Users' }
+            ]
         }
     ];
+
+    const renderMenuItem = (item) => {
+        if (!permissions.includes(item.permission)) {
+            return null;
+        }
+
+        return (
+            <button
+                key={item.title}
+                onClick={() => navigate(item.path)}
+                className="w-full p-4 text-right bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200"
+            >
+                {item.title}
+            </button>
+        );
+    };
+
+    const renderMenuSection = (section) => {
+        const visibleItems = section.items.filter(item => permissions.includes(item.permission));
+        if (visibleItems.length === 0) {
+            return null;
+        }
+
+        return (
+            <div key={section.title} className="space-y-4">
+                <h2 className="text-xl font-bold text-gray-800">{section.title}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {visibleItems.map(renderMenuItem)}
+                </div>
+            </div>
+        );
+    };
 
     if (loading && !dataInitialized) {
         return (
@@ -96,64 +136,13 @@ const MainPage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            <nav className="bg-white shadow-lg">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16 items-center">
-                        <h1 className="text-xl font-bold">מערכת ניהול סרטים ומנויים</h1>
-                        <div className="flex items-center">
-                            <span className="ml-4">שלום, {user?.userName || 'משתמש'}</span>
-                            <button
-                                onClick={handleLogout}
-                                className="ml-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                            >
-                                התנתק
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-
-            <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                        {error}
-                        <button
-                            onClick={() => setError('')}
-                            className="float-right font-bold"
-                        >
-                            &times;
-                        </button>
-                    </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {menuItems.map((section, index) => (
-                        // בדוק אם צריך להציג את הסקציה (אם זו סקציה של אדמין, רק אם יש הרשאות מתאימות)
-                        (!section.adminOnly || permissions?.includes('Manage Users')) && (
-                            <div key={index} className="bg-white overflow-hidden shadow rounded-lg">
-                                <div className="px-4 py-5 sm:p-6">
-                                    <h2 className="text-xl font-semibold mb-4">{section.title}</h2>
-                                    <div className="space-y-3">
-                                        {section.items.map((item, itemIndex) => (
-                                            // הצג רק פריטים שיש למשתמש הרשאה אליהם
-                                            permissions?.includes(item.permission) && (
-                                                <button
-                                                    key={itemIndex}
-                                                    onClick={() => navigate(item.path)}
-                                                    className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                                                >
-                                                    {item.label}
-                                                </button>
-                                            )
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )
-                    ))}
-                </div>
-            </main>
+        <div className="container mx-auto px-4 py-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-8">
+                שלום, {user?.username}!
+            </h1>
+            <div className="space-y-8">
+                {menuItems.map(renderMenuSection)}
+            </div>
         </div>
     );
 };

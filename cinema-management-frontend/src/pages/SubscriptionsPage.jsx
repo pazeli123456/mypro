@@ -4,13 +4,14 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { fetchAllSubscriptions } from '../redux/actions/mainActions';
 import { selectAllSubscriptions } from '../redux/reducers/subscriptionReducer';
-import { deleteSubscription } from '../services/apiService';
+import { subscriptionService } from '../services/apiService';
+import { selectCurrentUser } from '../redux/reducers/authReducer';
 
 const SubscriptionsPage = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const subscriptions = useSelector(selectAllSubscriptions);
-    const user = useSelector(state => state.user.user);
+    const user = useSelector(selectCurrentUser);
     
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -41,7 +42,7 @@ const SubscriptionsPage = () => {
         }
 
         try {
-            await deleteSubscription(subscriptionId);
+            await subscriptionService.delete(subscriptionId);
             await dispatch(fetchAllSubscriptions());
         } catch (err) {
             setError('שגיאה במחיקת המנוי');
@@ -67,7 +68,7 @@ const SubscriptionsPage = () => {
                     </div>
 
                     <div className="flex gap-2">
-                        {permissions.includes('Update Subscriptions') && (
+                        {permissions.includes('Edit Subscriptions') && (
                             <button
                                 onClick={() => navigate(`/subscriptions/edit/${subscription._id}`)}
                                 className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
