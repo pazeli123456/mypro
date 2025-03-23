@@ -78,7 +78,7 @@ router.get('/member/:id', checkPermission('View Subscriptions'), async (req, res
 });
 
 // עדכון מנוי
-router.put('/:id', checkPermission('Update Subscriptions'), async (req, res) => {
+router.put('/:id', checkPermission('Edit Subscriptions'), async (req, res) => {
     try {
         const { movies } = req.body;
 
@@ -132,6 +132,21 @@ router.delete('/:id', checkPermission('Delete Subscriptions'), async (req, res) 
     } catch (err) {
         console.error('Delete subscription error:', err);
         res.status(500).json({ error: err.message });
+    }
+});
+
+// קבלת מנוי לפי מזהה
+router.get('/:id', checkPermission('View Subscriptions'), async (req, res) => {
+    try {
+        const subscription = await subscriptionService.getById(req.params.id);
+        res.json(subscription);
+    } catch (error) {
+        if (error.message === 'Subscription not found') {
+            res.status(404).json({ message: 'המנוי לא נמצא' });
+        } else {
+            console.error('Error fetching subscription:', error);
+            res.status(500).json({ message: 'שגיאה בטעינת פרטי המנוי' });
+        }
     }
 });
 

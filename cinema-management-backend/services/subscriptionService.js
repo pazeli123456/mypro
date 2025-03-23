@@ -65,8 +65,27 @@ const getMemberSubscriptions = async (memberId) => {
     }
 };
 
+// קבלת מנוי לפי מזהה
+const getById = async (id) => {
+    try {
+        const subscription = await Subscription.findById(id)
+            .populate('memberId', 'name email city')
+            .populate('movies.movieId', 'name genres');
+
+        if (!subscription) {
+            throw new Error('Subscription not found');
+        }
+
+        return subscription;
+    } catch (error) {
+        console.error('Error fetching subscription by id:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     fetchSubscriptionsFromAPI,
     createSubscription,
-    getMemberSubscriptions
+    getMemberSubscriptions,
+    getById
 };

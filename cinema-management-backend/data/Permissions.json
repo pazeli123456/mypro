@@ -13,7 +13,8 @@
     "permissions": [
       "View Movies",
       "View Subscriptions",
-      "Edit Subscriptions"
+      "Create Subscriptions",
+      "Update Subscriptions"
     ]
   },
   {
@@ -22,13 +23,18 @@
     "password": "admin123",
     "permissions": [
       "View Movies",
-      "Add Movies",
+      "Create Movies",
+      "Update Movies",
       "Delete Movies",
-      "Edit Movies",
       "Manage Users",
-      "Manage Members",
+      "View Members",
+      "Create Members",
+      "Update Members",
+      "Delete Members",
       "View Subscriptions",
-      "Edit Subscriptions"
+      "Create Subscriptions",
+      "Update Subscriptions",
+      "Delete Subscriptions"
     ]
   },
   {

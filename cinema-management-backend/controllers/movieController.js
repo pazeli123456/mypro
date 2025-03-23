@@ -5,7 +5,7 @@ const { fetchMoviesFromAPI } = require('../services/movieService');
 const { checkPermission } = require('../configs/authMiddleware');
 
 // משיכת סרטים מ-API ושמירה ב-DB
-router.post('/fetch-movies', checkPermission('Add Movies'), async (req, res) => {
+router.post('/fetch-movies', checkPermission('Create Movies'), async (req, res) => {
     try {
         const moviesFromAPI = await fetchMoviesFromAPI();
         const formattedMovies = moviesFromAPI.map((movie) => ({
@@ -35,7 +35,7 @@ router.post('/fetch-movies', checkPermission('Add Movies'), async (req, res) => 
 });
 
 // יצירת סרט חדש
-router.post('/', checkPermission('Add Movies'), async (req, res) => {
+router.post('/', checkPermission('Create Movies'), async (req, res) => {
     try {
         const { name, genres, image, premiered } = req.body;
 
@@ -52,7 +52,7 @@ router.post('/', checkPermission('Add Movies'), async (req, res) => {
 });
 
 // שליפת כל הסרטים
-router.get('/', async (req, res) => {
+router.get('/', checkPermission('View Movies'), async (req, res) => {
     try {
         const movies = await Movie.find();
         res.json(movies);
@@ -62,7 +62,7 @@ router.get('/', async (req, res) => {
 });
 
 // שליפת סרט לפי ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', checkPermission('View Movies'), async (req, res) => {
     try {
         const movie = await Movie.findById(req.params.id);
         if (!movie) {
@@ -75,7 +75,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // עדכון סרט
-router.put('/:id', checkPermission('Update Movies'), async (req, res) => {
+router.put('/:id', checkPermission('Edit Movies'), async (req, res) => {
     try {
         const { name, genres, image, premiered } = req.body;
 

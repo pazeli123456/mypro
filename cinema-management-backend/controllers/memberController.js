@@ -81,7 +81,7 @@ router.get('/:id', checkPermission('View Members'), async (req, res) => {
 });
 
 // עדכון חבר
-router.put('/:id', checkPermission('Update Members'), async (req, res) => {
+router.put('/:id', checkPermission('Edit Members'), async (req, res) => {
     try {
         const { name, email, city } = req.body;
 

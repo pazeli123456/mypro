@@ -8,9 +8,6 @@ const rateLimit = require('express-rate-limit');
 const { generalLimiter, authLimiter, apiLimiter } = require('./middleware/rate-limit');
 const injectionProtection = require('./middleware/injection-protection');
 
-// הגנה בסיסית
-
-
 // טעינת משתני סביבה
 dotenv.config();
 
@@ -28,27 +25,29 @@ const { authenticateToken, checkPermission, checkAdmin } = require('./configs/au
 
 const app = express();
 
-// Middleware
+// Middleware בסיסי
 app.use(express.json());
+app.use(bodyParser.json());
+app.use(helmet());
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: process.env.CORS_ORIGIN.split(','),
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization', 'UserID'],
 }));
-app.use(bodyParser.json());
-app.use(injectionProtection);
-app.use(helmet());
-app.use(generalLimiter);
 
-// הגבלת קצב ספציפית לנתיבים
-app.use('/api/auth', authLimiter);
-app.use('/api', apiLimiter);
-
+// Rate limiting
 const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS),
     max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS),
     message: 'Too many requests, please try again later'
 });
+
+// הגנה מפני הזרקות
+app.use(injectionProtection);
+
+// הגבלת קצב ספציפית לנתיבים
+app.use('/api/auth', authLimiter);
+app.use('/api', apiLimiter);
 app.use(limiter);
 
 // Logging middleware
@@ -66,7 +65,6 @@ app.use('/api/subscription-service', authenticateToken, subscriptionRoutes);
 app.use('/api/subscriptions', authenticateToken, checkPermission('View Subscriptions'), subscriptionRoutes);
 app.use('/api/permissions', authenticateToken, checkAdmin, permissionRoutes);
 app.use('/api/test', testRoutes);
-
 
 // Base route
 app.get('/', (req, res) => {

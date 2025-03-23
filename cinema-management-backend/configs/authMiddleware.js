@@ -66,13 +66,12 @@ const checkPermission = (requiredPermissions) => {
            }
 
            const permissionHierarchy = {
-            'View Members': ['Manage Members'],
-            'View Subscriptions': ['Edit Subscriptions', 'Create Subscriptions', 'Update Subscriptions', 'Delete Subscriptions'],
-            'View Movies': ['Add Movies', 'Edit Movies', 'Delete Movies'],
-            'Create Subscriptions': ['Edit Subscriptions'],
-            'Update Subscriptions': ['Edit Subscriptions'],
-            'Delete Subscriptions': ['Edit Subscriptions']
-        };
+            'View Subscriptions': ['Create Subscriptions', 'Update Subscriptions', 'Delete Subscriptions', 'Manage Subscriptions'],
+            'View Movies': ['Create Movies', 'Update Movies', 'Delete Movies', 'Manage Movies'],
+            'View Members': ['Create Members', 'Update Members', 'Delete Members', 'Manage Members'],
+            'Manage Users': ['View Users', 'Create Users', 'Update Users', 'Delete Users']
+           };
+
            // בדיקת הרשאות
            const hasPermission = 
            Array.isArray(requiredPermissions) 
@@ -89,20 +88,20 @@ const checkPermission = (requiredPermissions) => {
                        req.user.permissions.includes(p)
                    )));
 
-       if (!hasPermission) {
-           return res.status(403).json({ 
-               error: 'Insufficient permissions',
-               requiredPermissions,
-               userPermissions: req.user.permissions
-           });
-       }
+           if (!hasPermission) {
+               return res.status(403).json({ 
+                   error: 'Insufficient permissions',
+                   requiredPermissions,
+                   userPermissions: req.user.permissions
+               });
+           }
 
-       next();
-   } catch (err) {
-       console.error('Permission check error:', err);
-       res.status(500).json({ error: 'Permission check failed' });
-   }
-};
+           next();
+       } catch (err) {
+           console.error('Permission check error:', err);
+           res.status(500).json({ error: 'Permission check failed' });
+       }
+   };
 };
 
 const checkAdmin = async (req, res, next) => {
