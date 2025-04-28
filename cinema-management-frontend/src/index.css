@@ -3,10 +3,6 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -24,15 +20,16 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  padding: 0;
   min-width: 320px;
   min-height: 100vh;
   direction: rtl;
+  background-color: #f8f9fa;
+  overflow-x: hidden;
 }
 
 h1 {
-  font-size: 3.2em;
+  font-size: 2.5em;
   line-height: 1.1;
 }
 
@@ -55,15 +52,49 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* רספונסיביות */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2em;
   }
-  a:hover {
-    color: #747bff;
+  
+  .container {
+    padding-left: 15px;
+    padding-right: 15px;
   }
+  
+  .card {
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 576px) {
+  h1 {
+    font-size: 1.8em;
+  }
+  
   button {
-    background-color: #f9f9f9;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+
+/* עיצוב בהיר כברירת מחדל */
+:root {
+  color: #213547;
+  background-color: #ffffff;
+}
+a:hover {
+  color: #747bff;
+}
+button {
+  background-color: #f9f9f9;
+}
+
+/* תמיכה בתצוגה כהה אם המערכת מוגדרת לכך */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: rgba(255, 255, 255, 0.87);
+    background-color: #242424;
   }
 }

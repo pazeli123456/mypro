@@ -52,7 +52,7 @@ const AppContent = () => {
   return (
     <div className="App">
       <Navbar />
-      <main className="py-3">
+      <main className="py-4 mt-5 pt-5">
         <Routes>
           {/* נתיבים ציבוריים */}
           <Route path="/login" element={<Login />} />
