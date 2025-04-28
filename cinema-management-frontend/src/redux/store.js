@@ -1,21 +1,26 @@
-// src/redux/store.js
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer from './reducers/authReducer';
-import movieReducer from './reducers/movieReducer';
-import memberReducer from './reducers/memberReducer';
-import subscriptionReducer from './reducers/subscriptionReducer';
-import userReducer from './reducers/userReducer';
+import authReducer from './slices/authSlice';
+import movieReducer from './slices/movieSlice';
+import memberReducer from './slices/memberSlice';
+import subscriptionReducer from './slices/subscriptionSlice';
+import userReducer from './slices/userSlice';
 
-export const store = configureStore({
-    reducer: {
-        auth: authReducer,
-        movies: movieReducer,
-        members: memberReducer,
-        subscriptions: subscriptionReducer,
-        users: userReducer
-    },
-    middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware({
-            serializableCheck: false
-        })
+const store = configureStore({
+  reducer: {
+    auth: authReducer,
+    movies: movieReducer,
+    members: memberReducer,
+    subscriptions: subscriptionReducer,
+    users: userReducer
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        // התעלמות משגיאות סריאליזציה בנתיבים מסוימים
+        ignoredActions: ['payload'],
+        ignoredPaths: ['some.path'],
+      },
+    }),
 });
+
+export default store; 

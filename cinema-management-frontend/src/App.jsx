@@ -1,215 +1,112 @@
-// src/App.jsx
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { selectCurrentUser } from './redux/reducers/authReducer';
-import { checkAuthStatus } from './redux/actions/authActions';
-import ProtectedRoute from './components/ProtectedRoute';
-import Navbar from './components/Navbar';
+import { useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { Provider } from 'react-redux'
+import { useDispatch } from 'react-redux'
+import 'bootstrap/dist/css/bootstrap.min.css'
+import './App.css'
 
-// דפים
-import Login from './pages/Login';
-import MainPage from './pages/MainPage';
-import MoviesPage from './pages/MoviesPage';
-import MovieDetailsPage from './pages/MovieDetailsPage';
-import AddMoviePage from './pages/AddMoviePage';
-import EditMoviePage from './pages/EditMoviePage';
-import DeleteMoviePage from './pages/DeleteMoviePage';
-import MembersPage from './pages/MembersPage';
-import EditMemberPage from './pages/EditMemberPage';
-import AddMemberPage from './pages/AddMemberPage';
-import SubscriptionsPage from './pages/SubscriptionsPage';
-import AddSubscriptionPage from './pages/AddSubscriptionPage';
-import EditSubscriptionPage from './pages/EditSubscriptionPage';
-import ManageUsersPage from './pages/ManageUsersPage';
-import EditUserPage from './pages/EditUserPage';
-import AddUserPage from './pages/AddUserPage';
-import CreateAccount from './pages/CreateAccount';
+// Redux Store
+import store from './redux/store'
+import { initializeAuth } from './redux/slices/authSlice'
 
-const App = () => {
-    const dispatch = useDispatch();
-    const user = useSelector(selectCurrentUser);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+// Components - Layout
+import Navbar from './components/layout/Navbar'
+import Main from './components/layout/Main'
 
-    useEffect(() => {
-        const initializeApp = async () => {
-            try {
-                await dispatch(checkAuthStatus()).unwrap();
-                setLoading(false);
-            } catch (err) {
-                setError('שגיאה בטעינת האפליקציה');
-                console.error('Failed to initialize app:', err);
-                setLoading(false);
-            }
-        };
+// Components - Auth
+import Login from './components/auth/Login'
+import CreateAccount from './components/auth/CreateAccount'
 
-        initializeApp();
-    }, [dispatch]);
+// Utils
+import ProtectedRoute from './utils/ProtectedRoute'
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-xl">טוען...</div>
-            </div>
-        );
-    }
+// Lazy loading for future components
+import React from 'react'
+const MoviesPage = React.lazy(() => import('./components/movies/MoviesPage'))
+const SubscriptionsPage = React.lazy(() => import('./components/members/SubscriptionsPage'))
+const UsersPage = React.lazy(() => import('./components/users/UsersPage'))
 
-    if (error) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-xl text-red-500">{error}</div>
-            </div>
-        );
-    }
+// Loading fallback
+const LoadingFallback = () => (
+  <div className="text-center mt-5">
+    <div className="spinner-border text-primary" role="status">
+      <span className="visually-hidden">טוען...</span>
+    </div>
+    <p className="mt-2">טוען...</p>
+  </div>
+)
 
-    return (
-        <BrowserRouter>
-            <div className="min-h-screen bg-gray-100">
-                <Navbar />
-                <div className="container mx-auto px-4 py-8">
-                    <Routes>
-                        {/* ניהול משתמשים */}
-                        <Route
-                            path="/users"
-                            element={
-                                <ProtectedRoute requiredPermissions={['Manage Users']}>
-                                    <ManageUsersPage />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/users/edit/:id"
-                            element={
-                                <ProtectedRoute requiredPermissions={['Manage Users']}>
-                                    <EditUserPage />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/users/add"
-                            element={
-                                <ProtectedRoute requiredPermissions={['Manage Users']}>
-                                    <AddUserPage />
-                                </ProtectedRoute>
-                            }
-                        />
+// Wrapper component to handle redux actions
+const AppContent = () => {
+  const dispatch = useDispatch();
 
-                        {/* נתיבים ציבוריים */}
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<CreateAccount />} />
+  // אתחול מצב האימות והגדרת כיוון הטקסט לעברית
+  useEffect(() => {
+    document.documentElement.setAttribute('dir', 'rtl');
+    document.body.setAttribute('dir', 'rtl');
+    
+    // אתחול מצב האימות מהזיכרון המקומי
+    dispatch(initializeAuth());
+  }, [dispatch]);
 
-                        {/* נתיבים מוגנים */}
-                        <Route
-                            path="/"
-                            element={
-                                <ProtectedRoute>
-                                    <MainPage />
-                                </ProtectedRoute>
-                            }
-                        />
+  return (
+    <div className="App">
+      <Navbar />
+      <main className="py-3">
+        <Routes>
+          {/* נתיבים ציבוריים */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/create-account" element={<CreateAccount />} />
 
-                        {/* ניהול סרטים */}
-                        <Route
-                            path="/movies"
-                            element={
-                                <ProtectedRoute requiredPermissions={['View Movies']}>
-                                    <MoviesPage />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/movies/:id"
-                            element={
-                                <ProtectedRoute requiredPermissions={['View Movies']}>
-                                    <MovieDetailsPage />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/movies/add"
-                            element={
-                                <ProtectedRoute requiredPermissions={['Create Movies']}>
-                                    <AddMoviePage />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/movies/edit/:id"
-                            element={
-                                <ProtectedRoute requiredPermissions={['Update Movies']}>
-                                    <EditMoviePage />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/movies/delete/:id"
-                            element={
-                                <ProtectedRoute requiredPermissions={['Delete Movies']}>
-                                    <DeleteMoviePage />
-                                </ProtectedRoute>
-                            }
-                        />
+          {/* נתיבים מוגנים - דורשים חיבור */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/main" element={<Main />} />
+          </Route>
 
-                        {/* ניהול חברים */}
-                        <Route
-                            path="/members"
-                            element={
-                                <ProtectedRoute requiredPermissions={['View Members']}>
-                                    <MembersPage />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/members/add"
-                            element={
-                                <ProtectedRoute requiredPermissions={['Create Members']}>
-                                    <AddMemberPage />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/members/edit/:id"
-                            element={
-                                <ProtectedRoute requiredPermissions={['Update Members']}>
-                                    <EditMemberPage />
-                                </ProtectedRoute>
-                            }
-                        />
+          {/* נתיבים שדורשים הרשאת סרטים */}
+          <Route element={<ProtectedRoute requiredPermission="View Movies" />}>
+            <Route path="/movies/*" element={
+              <React.Suspense fallback={<LoadingFallback />}>
+                <MoviesPage />
+              </React.Suspense>
+            } />
+          </Route>
 
-                        {/* ניהול מנויים */}
-                        <Route
-                            path="/subscriptions"
-                            element={
-                                <ProtectedRoute requiredPermissions={['View Subscriptions']}>
-                                    <SubscriptionsPage />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/subscriptions/add"
-                            element={
-                                <ProtectedRoute requiredPermissions={['Create Subscriptions']}>
-                                    <AddSubscriptionPage />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/subscriptions/edit/:id"
-                            element={
-                                <ProtectedRoute requiredPermissions={['Edit Subscriptions']}>
-                                    <EditSubscriptionPage />
-                                </ProtectedRoute>
-                            }
-                        />
+          {/* נתיבים שדורשים הרשאת מנויים */}
+          <Route element={<ProtectedRoute requiredPermission="View Subscriptions" />}>
+            <Route path="/subscriptions/*" element={
+              <React.Suspense fallback={<LoadingFallback />}>
+                <SubscriptionsPage />
+              </React.Suspense>
+            } />
+          </Route>
 
-                        {/* נתיב ברירת מחדל */}
-                        <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
-                </div>
-            </div>
-        </BrowserRouter>
-    );
+          {/* נתיבים שדורשים הרשאת מנהל */}
+          <Route element={<ProtectedRoute adminOnly={true} />}>
+            <Route path="/users/*" element={
+              <React.Suspense fallback={<LoadingFallback />}>
+                <UsersPage />
+              </React.Suspense>
+            } />
+          </Route>
+
+          {/* הפניות ברירת מחדל */}
+          <Route path="/" element={<Navigate to="/main" replace />} />
+          <Route path="*" element={<Navigate to="/main" replace />} />
+        </Routes>
+      </main>
+    </div>
+  );
 };
+
+function App() {
+  return (
+    <Provider store={store}>
+      <Router>
+        <AppContent />
+      </Router>
+    </Provider>
+  );
+}
 
 export default App;

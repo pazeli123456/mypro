@@ -52,5 +52,21 @@
       "View Movies",
       "View Subscriptions"
     ]
+  },
+  {
+    "id": "6",
+    "userName": "chenehn",
+    "permissions": [
+      "View Movies",
+      "View Subscriptions"
+    ]
+  },
+  {
+    "id": "7",
+    "userName": "chena",
+    "permissions": [
+      "View Movies",
+      "View Subscriptions"
+    ]
   }
 ]
