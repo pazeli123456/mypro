@@ -37,7 +37,7 @@ const authenticateToken = async (req, res, next) => {
        
        // בדיקה מול קובץ ההרשאות
        const permissions = await readPermissions();
-       const user = permissions.find(u => u.id === decoded.userId);
+       const user = permissions.find(u => u.userName === decoded.userName);
 
        if (!user) {
            return res.status(401).json({ error: 'User not found' });
@@ -112,7 +112,7 @@ const checkAdmin = async (req, res, next) => {
 
        // בדיקת משתמש מהרשאות
        const permissions = await readPermissions();
-       const user = permissions.find(u => u.id === req.user.userId);
+       const user = permissions.find(u => u.userName === req.user.userName);
        
        if (!user || !user.permissions.includes('Manage Users')) {
            return res.status(403).json({ error: 'Admin access required' });

@@ -72,24 +72,22 @@ router.post('/login', async (req, res) => {
         const permissions = await readPermissions();
         const users = await readUsers();
 
-        const permissionUser = permissions.find(
-            u => u.userName === userName && u.password === password
-        );
-
+        // Find user by username and password
         const user = users.find(
             u => u.userName === userName && u.password === password
         );
 
-        const foundUser = permissionUser || user;
-
-        if (!foundUser) {
+        if (!user) {
             return res.status(401).json({ error: 'Invalid username or password' });
         }
 
+        // Find permissions for this user
+        const permissionUser = permissions.find(p => p.userName === userName);
+
         const token = jwt.sign(
             { 
-                userId: foundUser.id, 
-                userName: foundUser.userName,
+                userId: user.id, 
+                userName: user.userName,
                 permissions: permissionUser?.permissions || []
             }, 
             JWT_SECRET, 
@@ -98,8 +96,8 @@ router.post('/login', async (req, res) => {
 
         res.json({
             token,
-            userId: foundUser.id,
-            userName: foundUser.userName,
+            userId: user.id,
+            userName: user.userName,
             permissions: permissionUser?.permissions || []
         });
     } catch (err) {
@@ -132,8 +130,9 @@ router.post('/create-account', async (req, res) => {
         }
 
         // Create new user in Users.json
+        const newUserId = String(users.length + 1);
         const newUser = {
-            id: String(users.length + 1),
+            id: newUserId,
             userName,
             password, // Note: In production, you should hash the password
             email,
@@ -144,7 +143,7 @@ router.post('/create-account', async (req, res) => {
         // Add to Permissions.json
         const permissions = await readPermissions();
         const newPermission = {
-            id: String(permissions.length + 1),
+            id: newUserId,
             userName,
             permissions: [
                 'View Movies',
