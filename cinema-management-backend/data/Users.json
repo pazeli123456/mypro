@@ -37,7 +37,12 @@
     "password": "Pazraz12@",
     "email": "www@gm.com",
     "createdDate": "2025-01-18T16:08:01.714Z",
-    "sessionTimeOut": 60
+    "sessionTimeOut": 60,
+    "permissions": [
+      "View Movies",
+      "View Subscriptions"
+    ],
+    "role": "USER"
   },
   {
     "id": "5",
@@ -45,7 +50,12 @@
     "password": "12345678@",
     "email": "safsa@sadgf.com",
     "createdDate": "2025-01-18T21:07:47.996Z",
-    "sessionTimeOut": 60
+    "sessionTimeOut": 60,
+    "permissions": [
+      "View Movies",
+      "View Subscriptions"
+    ],
+    "role": "USER"
   },
   {
     "id": "6",
@@ -53,7 +63,12 @@
     "password": "03069999",
     "email": "chen@gg.com",
     "createdDate": "2025-04-04T09:48:35.146Z",
-    "sessionTimeOut": 60
+    "sessionTimeOut": 60,
+    "permissions": [
+      "View Movies",
+      "View Subscriptions"
+    ],
+    "role": "USER"
   },
   {
     "id": "7",
@@ -61,7 +76,12 @@
     "password": "03069999",
     "email": "chena@g.com",
     "createdDate": "2025-04-04T09:49:04.275Z",
-    "sessionTimeOut": 60
+    "sessionTimeOut": 60,
+    "permissions": [
+      "View Movies",
+      "View Subscriptions"
+    ],
+    "role": "USER"
   },
   {
     "id": "8",
@@ -69,7 +89,12 @@
     "password": "03069999",
     "email": "chen@gmail.com",
     "createdDate": "2025-04-28T09:13:34.370Z",
-    "sessionTimeOut": 60
+    "sessionTimeOut": 60,
+    "permissions": [
+      "View Movies",
+      "View Subscriptions"
+    ],
+    "role": "USER"
   },
   {
     "id": "9",
@@ -77,6 +102,11 @@
     "password": "03069999",
     "email": "paz@gmail.com",
     "createdDate": "2025-06-25T08:54:03.829Z",
-    "sessionTimeOut": 60
+    "sessionTimeOut": 60,
+    "permissions": [
+      "View Movies",
+      "View Subscriptions"
+    ],
+    "role": "USER"
   }
 ]
