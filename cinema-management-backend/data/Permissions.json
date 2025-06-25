@@ -82,9 +82,7 @@
     "userName": "pazpaz",
     "permissions": [
       "View Movies",
-      "View Subscriptions",
-      "Create Subscriptions",
-      "Update Subscriptions"
+      "View Subscriptions"
     ]
   }
 ]

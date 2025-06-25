@@ -140,7 +140,7 @@ router.post('/create-account', async (req, res) => {
             sessionTimeOut: 60
         };
 
-        // Add to Permissions.json
+        // Add to Permissions.json - תמיד רק הרשאות בסיסיות
         const permissions = await readPermissions();
         const newPermission = {
             id: newUserId,
