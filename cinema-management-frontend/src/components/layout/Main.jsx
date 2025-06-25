@@ -21,7 +21,14 @@ const Main = () => {
   
   const [loading, setLoading] = useState(true);
   
-  const isAdmin = AuthService.isAdmin();
+  // בדיקת סוג המשתמש
+  const isAdmin = user?.permissions?.includes('Manage Users');
+  const isMember = user?.permissions?.includes('View Subscriptions') && !user?.permissions?.includes('Create Subscriptions');
+  const isRegularUser = user?.permissions?.includes('View Movies') && !user?.permissions?.includes('Create Movies');
+  
+  // קביעת קלאס לפי סוג משתמש
+  const userClass = isAdmin ? 'user-admin' : isMember ? 'user-member' : 'user-regular';
+
   const hasMoviesPermission = user?.permissions?.includes('View Movies');
   const hasSubscriptionsPermission = user?.permissions?.includes('View Subscriptions');
 
@@ -111,39 +118,47 @@ const Main = () => {
   }
 
   return (
-    <Container>
+    <Container className={userClass}>
       <Row className="mb-4">
         <Col>
-          <h1 className="text-center mb-3">ברוך הבא למערכת ניהול קולנוע</h1>
-          <p className="text-center text-muted mb-5">נהל את הסרטים, המנויים והמשתמשים במערכת באופן קל ונוח</p>
+          <h1 className="text-center mb-3">
+            {isAdmin ? 'ברוך הבא מנהל המערכת' : 
+             isMember ? 'ברוך הבא חבר' : 
+             'ברוך הבא למערכת ניהול קולנוע'}
+          </h1>
+          <p className="text-center text-muted mb-5">
+            {isAdmin ? 'נהל את הסרטים, המנויים והמשתמשים במערכת' :
+             isMember ? 'צפה בסרטים וניהול המנוי שלך' :
+             'צפה בסרטים ומנויים במערכת'}
+          </p>
         </Col>
       </Row>
       
       {/* קארדים של סטטיסטיקות */}
       <Row className="mb-5">
         {hasMoviesPermission && (
-          <Col lg={4} md={6} className="mb-4">
+          <Col lg={isAdmin ? 4 : 6} md={6} className="mb-4">
             <StatCard 
               title="סרטים" 
               count={movies.length} 
               icon={<MovieIcon />} 
               color="primary" 
               linkTo="/movies"
-              btnText="צפה בכל הסרטים"
+              btnText={isMember ? "צפה בסרטים" : "נהל סרטים"}
               delay={100}
             />
           </Col>
         )}
         
         {hasSubscriptionsPermission && (
-          <Col lg={4} md={6} className="mb-4">
+          <Col lg={isAdmin ? 4 : 6} md={6} className="mb-4">
             <StatCard 
-              title="מנויים" 
-              count={members.length} 
+              title={isMember ? "המנוי שלי" : "מנויים"} 
+              count={isMember ? 1 : members.length} 
               icon={<MemberIcon />} 
               color="success"
               linkTo="/subscriptions"
-              btnText="צפה בכל המנויים"
+              btnText={isMember ? "צפה במנוי שלי" : "נהל מנויים"}
               delay={200}
             />
           </Col>
@@ -164,17 +179,23 @@ const Main = () => {
         )}
       </Row>
       
-      <h2 className="text-center mb-4">שירותי המערכת</h2>
+      <h2 className="text-center mb-4">
+        {isAdmin ? 'שירותי המערכת' :
+         isMember ? 'השירותים שלך' :
+         'שירותים זמינים'}
+      </h2>
       
       {/* כרטיסיות לניהול */}
       <Row className="justify-content-center g-4">
         {hasMoviesPermission && (
           <FeatureCard 
-            title="ניהול סרטים"
-            description="צפייה, הוספה, עריכה ומחיקת סרטים במערכת. ניהול מידע אודות סרטים הזמינים למנויים."
+            title={isMember ? "צפייה בסרטים" : "ניהול סרטים"}
+            description={isMember ? 
+              "צפה בסרטים הזמינים במערכת וצפה בסרטים שצפית בהם" :
+              "צפייה, הוספה, עריכה ומחיקת סרטים במערכת"}
             icon={<MovieIcon />}
             linkTo="/movies"
-            btnText="צפה בסרטים"
+            btnText={isMember ? "צפה בסרטים" : "נהל סרטים"}
             color="primary"
             delay={400}
           />
@@ -182,11 +203,13 @@ const Main = () => {
         
         {hasSubscriptionsPermission && (
           <FeatureCard 
-            title="ניהול מנויים"
-            description="צפייה, הוספה, עריכה ומחיקה של מנויים במערכת. ניהול המנויים והסרטים בהם צפו."
+            title={isMember ? "המנוי שלי" : "ניהול מנויים"}
+            description={isMember ? 
+              "צפה במנוי שלך והסרטים שצפית בהם" :
+              "צפייה, הוספה, עריכה ומחיקה של מנויים במערכת"}
             icon={<MemberIcon />}
             linkTo="/subscriptions"
-            btnText="צפה במנויים"
+            btnText={isMember ? "צפה במנוי שלי" : "נהל מנויים"}
             color="success"
             delay={500}
           />
@@ -195,10 +218,10 @@ const Main = () => {
         {isAdmin && (
           <FeatureCard 
             title="ניהול משתמשים"
-            description="צפייה, הוספה, עריכה ומחיקה של משתמשי המערכת. ניהול הרשאות גישה למשתמשים השונים."
+            description="צפייה, הוספה, עריכה ומחיקה של משתמשי המערכת"
             icon={<UserIcon />}
             linkTo="/users"
-            btnText="צפה במשתמשים"
+            btnText="נהל משתמשים"
             color="info"
             delay={600}
           />

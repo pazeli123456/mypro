@@ -313,3 +313,50 @@ a:hover {
     height: 200px;
   }
 }
+
+/* סגנונות לפי סוג משתמש */
+.user-admin .nav-link {
+  color: #3182ce;
+}
+
+.user-admin .nav-link:hover {
+  color: #2b6cb0;
+}
+
+.user-member .nav-link {
+  color: #38a169;
+}
+
+.user-member .nav-link:hover {
+  color: #2f855a;
+}
+
+.user-regular .nav-link {
+  color: #805ad5;
+}
+
+.user-regular .nav-link:hover {
+  color: #6b46c1;
+}
+
+/* סגנונות לכרטיסיות לפי סוג משתמש */
+.user-admin .dashboard-card {
+  border-top: 4px solid #3182ce;
+}
+
+.user-member .dashboard-card {
+  border-top: 4px solid #38a169;
+}
+
+.user-regular .dashboard-card {
+  border-top: 4px solid #805ad5;
+}
+
+/* הסתרת אלמנטים לפי הרשאות */
+.hide-for-member {
+  display: none !important;
+}
+
+.hide-for-regular {
+  display: none !important;
+}

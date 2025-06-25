@@ -146,7 +146,12 @@ router.post('/create-account', async (req, res) => {
         const newPermission = {
             id: String(permissions.length + 1),
             userName,
-            permissions: ['View Movies', 'View Subscriptions']
+            permissions: [
+                'View Movies',
+                'View Subscriptions',
+                'Create Subscriptions',
+                'Update Subscriptions'
+            ]
         };
 
         // Save to files

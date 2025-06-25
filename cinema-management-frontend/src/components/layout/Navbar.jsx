@@ -13,11 +13,19 @@ const Navbar = () => {
   const [expanded, setExpanded] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
+  // בדיקת סוג המשתמש
+  const isAdmin = user?.permissions?.includes('Manage Users');
+  const isMember = user?.permissions?.includes('View Subscriptions') && !user?.permissions?.includes('Create Subscriptions');
+  const isRegularUser = user?.permissions?.includes('View Movies') && !user?.permissions?.includes('Create Movies');
+
+  // קביעת קלאס לפי סוג משתמש
+  const userClass = isAdmin ? 'user-admin' : isMember ? 'user-member' : 'user-regular';
+
   // בדיקת הרשאות מנהל בצורה עמידה לשגיאות
-  let isAdmin = false;
+  let isAdminStatus = false;
   try {
     if (isLoggedIn) {
-      isAdmin = AuthService.isAdmin();
+      isAdminStatus = AuthService.isAdmin();
     }
   } catch (error) {
     console.error('Error checking admin status:', error);
@@ -57,7 +65,7 @@ const Navbar = () => {
       bg="white" 
       variant="light" 
       expand="lg" 
-      className={`fixed-top ${scrolled ? 'shadow-sm' : ''}`}
+      className={`fixed-top ${scrolled ? 'shadow-sm' : ''} ${userClass}`}
       expanded={expanded}
       onToggle={(expanded) => setExpanded(expanded)}
     >
@@ -80,34 +88,75 @@ const Navbar = () => {
                 <i className="bi bi-house-door me-1"></i> ראשי
               </Nav.Link>
               
-              {user?.permissions?.includes('View Movies') && (
-                <Nav.Link 
-                  as={Link} 
-                  to="/movies"
-                  className={`mx-2 ${isActive('/movies') ? 'active fw-bold' : ''}`}
-                >
-                  <i className="bi bi-film me-1"></i> סרטים
-                </Nav.Link>
-              )}
-              
-              {user?.permissions?.includes('View Subscriptions') && (
-                <Nav.Link 
-                  as={Link} 
-                  to="/subscriptions"
-                  className={`mx-2 ${isActive('/subscriptions') ? 'active fw-bold' : ''}`}
-                >
-                  <i className="bi bi-people me-1"></i> מנויים
-                </Nav.Link>
-              )}
-              
+              {/* תפריט למנהל */}
               {isAdmin && (
-                <Nav.Link 
-                  as={Link} 
-                  to="/users"
-                  className={`mx-2 ${isActive('/users') ? 'active fw-bold' : ''}`}
-                >
-                  <i className="bi bi-person-badge me-1"></i> ניהול משתמשים
-                </Nav.Link>
+                <>
+                  <Nav.Link 
+                    as={Link} 
+                    to="/movies"
+                    className={`mx-2 ${isActive('/movies') ? 'active fw-bold' : ''}`}
+                  >
+                    <i className="bi bi-film me-1"></i> סרטים
+                  </Nav.Link>
+                  
+                  <Nav.Link 
+                    as={Link} 
+                    to="/subscriptions"
+                    className={`mx-2 ${isActive('/subscriptions') ? 'active fw-bold' : ''}`}
+                  >
+                    <i className="bi bi-people me-1"></i> מנויים
+                  </Nav.Link>
+                  
+                  <Nav.Link 
+                    as={Link} 
+                    to="/users"
+                    className={`mx-2 ${isActive('/users') ? 'active fw-bold' : ''}`}
+                  >
+                    <i className="bi bi-person-badge me-1"></i> ניהול משתמשים
+                  </Nav.Link>
+                </>
+              )}
+              
+              {/* תפריט למשתמש רגיל */}
+              {isRegularUser && (
+                <>
+                  <Nav.Link 
+                    as={Link} 
+                    to="/movies"
+                    className={`mx-2 ${isActive('/movies') ? 'active fw-bold' : ''}`}
+                  >
+                    <i className="bi bi-film me-1"></i> סרטים
+                  </Nav.Link>
+                  
+                  <Nav.Link 
+                    as={Link} 
+                    to="/subscriptions"
+                    className={`mx-2 ${isActive('/subscriptions') ? 'active fw-bold' : ''}`}
+                  >
+                    <i className="bi bi-people me-1"></i> מנויים
+                  </Nav.Link>
+                </>
+              )}
+              
+              {/* תפריט לחבר */}
+              {isMember && (
+                <>
+                  <Nav.Link 
+                    as={Link} 
+                    to="/movies"
+                    className={`mx-2 ${isActive('/movies') ? 'active fw-bold' : ''}`}
+                  >
+                    <i className="bi bi-film me-1"></i> סרטים
+                  </Nav.Link>
+                  
+                  <Nav.Link 
+                    as={Link} 
+                    to="/subscriptions"
+                    className={`mx-2 ${isActive('/subscriptions') ? 'active fw-bold' : ''}`}
+                  >
+                    <i className="bi bi-people me-1"></i> המנוי שלי
+                  </Nav.Link>
+                </>
               )}
             </Nav>
           )}

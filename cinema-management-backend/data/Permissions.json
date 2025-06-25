@@ -68,5 +68,13 @@
       "View Movies",
       "View Subscriptions"
     ]
+  },
+  {
+    "id": "8",
+    "userName": "chenipaz",
+    "permissions": [
+      "View Movies",
+      "View Subscriptions"
+    ]
   }
 ]

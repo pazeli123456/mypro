@@ -27,7 +27,12 @@ const userSchema = new mongoose.Schema({
     },
     permissions: {
         type: [String],
-        default: ['View Movies']
+        default: [
+            'View Movies',
+            'View Subscriptions',
+            'Create Subscriptions',
+            'Update Subscriptions'
+        ]
     },
     role: {
         type: String,

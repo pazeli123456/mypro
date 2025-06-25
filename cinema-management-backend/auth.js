@@ -62,7 +62,10 @@ router.post('/create-account', async (req, res) => {
         const newUser = new User({
             userName,
             password: hashedPassword,
-            permissions: ['View Movies'] // הרשאות בסיסיות
+            permissions: [
+                'View Movies',
+                'View Subscriptions'
+            ]
         });
 
         await newUser.save();
