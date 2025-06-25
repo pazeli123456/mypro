@@ -76,5 +76,15 @@
       "View Movies",
       "View Subscriptions"
     ]
+  },
+  {
+    "id": "9",
+    "userName": "pazpaz",
+    "permissions": [
+      "View Movies",
+      "View Subscriptions",
+      "Create Subscriptions",
+      "Update Subscriptions"
+    ]
   }
 ]

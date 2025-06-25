@@ -148,9 +148,7 @@ router.post('/create-account', async (req, res) => {
             userName,
             permissions: [
                 'View Movies',
-                'View Subscriptions',
-                'Create Subscriptions',
-                'Update Subscriptions'
+                'View Subscriptions'
             ]
         };
 

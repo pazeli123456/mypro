@@ -16,12 +16,13 @@
     "permissions": [
       "View Movies",
       "View Subscriptions",
-      "Edit Subscriptions"
+      "Create Subscriptions",
+      "Update Subscriptions"
     ],
     "role": "MEMBER"
   },
   {
-    "id": "1",
+    "id": "3",
     "userName": "user",
     "password": "password",
     "permissions": [
@@ -68,6 +69,14 @@
     "password": "03069999",
     "email": "chen@gmail.com",
     "createdDate": "2025-04-28T09:13:34.370Z",
+    "sessionTimeOut": 60
+  },
+  {
+    "id": "9",
+    "userName": "pazpaz",
+    "password": "03069999",
+    "email": "paz@gmail.com",
+    "createdDate": "2025-06-25T08:54:03.829Z",
     "sessionTimeOut": 60
   }
 ]
